@@ -3,8 +3,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <errno.h>
 
-#define LINE_LENGTH 1024
+#define LINE_LENGTH 513 // 512 + 1 for the '\n' char
 
 /**
  * @brief Convert string to positive integer from specified position
@@ -12,10 +13,10 @@
  * @param str string to convert from
  * @param count position from which to start converting
  *
- * @return -1 in case of error, otherwise parsed integer
+ * @return parsed integer
  */
-int parsePositiveInt(char* str, int count) {
-	memset(str, '0', count);
+unsigned long parsePositiveInt(char* str, const int count) {
+	memset(str, '0', count); // set 1st count chars to 0
 	for (size_t i = 0; i < strlen(str); ++i) {
 		if (!isdigit(str[i])) {
 			fprintf(stderr, "Invalid argument of -n. Make sure to type positive integer.\n");
@@ -23,7 +24,14 @@ int parsePositiveInt(char* str, int count) {
 		}
 	}
 
-	return atol(str);
+	const unsigned long lines = strtoul(str, NULL, 10);
+
+	if (errno) {
+		fprintf(stderr, "Range error of parsed number occured.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return lines;
 }
 
 /**
@@ -37,9 +45,11 @@ unsigned int countLines(FILE * fp) {
 	char line[LINE_LENGTH];
 	unsigned int count = 0;
 
-
+	// count lines with newline character
 	while (fgets(line, LINE_LENGTH, fp)) {
-		count++;
+		if (strchr(line, '\n') != NULL) {
+			++count;
+		}
 	}
 
 	rewind(fp);
@@ -50,51 +60,44 @@ unsigned int countLines(FILE * fp) {
  * @brief Print tail of file
  *
  * @param fp file to read from
- * @param numOfLines number of lines in fp
  * @param linesFromTail number of lines in tail of file to print
  */
-void readLines(FILE * fp, unsigned int numOfLines, unsigned int linesFromTail) {
+void readLines(FILE * fp, unsigned long linesFromTail) {
 	char line[LINE_LENGTH];
-	bool exceeded = false;
+	unsigned long numOfLines = countLines(fp);
 
-	while (fgets(line, LINE_LENGTH, fp)) {
-		// skip the line which was creating by dividing previos line
-		if (exceeded) {
-			exceeded = false;
-			continue;
-		}
 
-		--numOfLines; // reversed count
-
-		if (!strchr(line, (int)'\n')) {
-			fprintf(stderr, "Line exceeded the maximum length of characters in file %s.\n", __FILE__);
-			exceeded = true;
-			continue;
-		}
-
-		if (numOfLines < linesFromTail || numOfLines == 0) {
+	while (fgets(line, LINE_LENGTH+1, fp)) {
+		// move the position to the first line of tail
+		if (numOfLines > linesFromTail) {
+			if (strchr(line, '\n') != NULL) {
+				numOfLines--;
+			}
+		} else if (strchr(line, '\n') != NULL) {
 			printf("%s", line);
-			--linesFromTail;
+		} else {
+			fprintf(stderr, "ERROR: Detected line overflow\n");
+			// move the position to the next line
+			while(fgetc(fp) != '\n')
+				;
 		}
 	}
-
 	rewind(fp);
 }
 
 int main(int argc, char *argv[]) {
-	unsigned int lines = 10;
+	unsigned long lines = 10;
 
 	bool flagFile = false;
 	FILE * fp = stdin;
 
-	for (int i = 1; argv[i]; ++i) {
+	for (int i = 1; i < argc; ++i) {
 		if (!strcmp(argv[i], "-n")) {
-			// ./tail -n 20
 			lines = parsePositiveInt(argv[++i], 0);
-		} else if (!strncmp(argv[i], "-n", 2)) { // && strlen(argv[i]) > 2 (not needed?) TODO
+		} else if (!strncmp(argv[i], "-n", 2)) {
 			lines = parsePositiveInt(argv[i], 2);
 		} else if (flagFile) {
-			fprintf(stderr, "Only one file is accepted.");
+			fprintf(stderr, "Only one file is accepted.\n");
 			return EXIT_FAILURE;
 		} else {
 			fp = fopen(argv[i], "r");
@@ -106,10 +109,11 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	readLines(fp, countLines(fp), lines);
+	readLines(fp, lines);
 
 	if (flagFile) {
 		fclose(fp);
 	}
+
 	return EXIT_SUCCESS;
 }
