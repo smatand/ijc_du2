@@ -1,14 +1,13 @@
 #include <stdlib.h>
 
-#include "htab.h"
+#include "htab_private.h"
 
-/**
- * @brief Free all items in hash table
- * 
- * @param t table to be freed
- */
-void htab_free(htab_t *t) {
-    htab_clear(t);
+void htab_free(htab_t * t) {
+	if (t == NULL) {
+		return;
+	}
 
-    free(t);
+	htab_clear(t);
+	free(t);
 }
+
