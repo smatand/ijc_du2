@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#define LINE_LENGTH 513 // 512 + 1 for the '\n' char
+#define LINE_LENGTH 512
 
 /**
  * @brief Convert string to positive integer from specified position
@@ -35,68 +35,55 @@ unsigned long parsePositiveInt(char* str, const int count) {
 }
 
 /**
- * @brief Count lines in file
- *
+ * @brief Read last n lines from file
+ * 
  * @param fp file to read from
- *
- * @return counted lines
+ * @param numOfLines number of lines to read
  */
-unsigned int countLines(FILE * fp) {
-	char line[LINE_LENGTH];
-	unsigned int count = 0;
+void readTail(FILE * fp, unsigned long numOfLines) {
+	char buffer[numOfLines][LINE_LENGTH]; // used as cyclical buffer
+	char trash[LINE_LENGTH]; // for overflowed lines
 
-	// count lines with newline character
-	while (fgets(line, LINE_LENGTH, fp)) {
-		if (strchr(line, '\n') != NULL) {
-			++count;
-		}
-	}
+	unsigned long index = 0;
+	bool overflow_err_f = false;
 
-	rewind(fp);
-	return count;
-}
+	while (fgets(buffer[index % numOfLines], LINE_LENGTH, fp) != NULL) {
+		if (strchr(buffer[index % numOfLines], '\n') == NULL) {
+			// after overflow error, skip the rest of the lines
+			do {
+				fgets(trash, LINE_LENGTH, fp);
+			} while (strchr(trash, '\n') == NULL);
 
-/**
- * @brief Print tail of file
- *
- * @param fp file to read from
- * @param linesFromTail number of lines in tail of file to print
- */
-void readLines(FILE * fp, unsigned long linesFromTail) {
-	char line[LINE_LENGTH];
-	unsigned long numOfLines = countLines(fp);
-
-
-	while (fgets(line, LINE_LENGTH+1, fp)) {
-		// move the position to the first line of tail
-		if (numOfLines > linesFromTail) {
-			if (strchr(line, '\n') != NULL) {
-				numOfLines--;
+			if (overflow_err_f == false) {
+				fprintf(stderr, "ERROR: Detected line overflow\n");
+				overflow_err_f = true;
 			}
-		} else if (strchr(line, '\n') != NULL) {
-			printf("%s", line);
+		}
+
+		index++;
+	}
+
+	for (unsigned long i = 0; i < numOfLines; i++) {
+		if (strchr(buffer[index % numOfLines], '\n') == NULL) {
+			printf("%s\n", buffer[index % numOfLines]);
 		} else {
-			fprintf(stderr, "ERROR: Detected line overflow\n");
-			// move the position to the next line
-			while(fgetc(fp) != '\n')
-				;
+			printf("%s", buffer[(index + i) % numOfLines]);
 		}
 	}
-	rewind(fp);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char ** argv) {
 	unsigned long lines = 10;
 
-	bool flagFile = false;
+	bool file_f = false;
 	FILE * fp = stdin;
 
-	for (int i = 1; i < argc; ++i) {
+	for (int i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-n")) {
 			lines = parsePositiveInt(argv[++i], 0);
 		} else if (!strncmp(argv[i], "-n", 2)) {
 			lines = parsePositiveInt(argv[i], 2);
-		} else if (flagFile) {
+		} else if (file_f) {
 			fprintf(stderr, "Only one file is accepted.\n");
 			return EXIT_FAILURE;
 		} else {
@@ -105,13 +92,13 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "File couldn't be opened.\n");
 				return EXIT_FAILURE;
 			}
-			flagFile = true;
+			file_f = true;
 		}
 	}
 
-	readLines(fp, lines);
+	readTail(fp, lines);
 
-	if (flagFile) {
+	if (file_f) {
 		fclose(fp);
 	}
 
