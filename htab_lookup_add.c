@@ -3,7 +3,7 @@
 
 #include "htab_private.h"
 
-#define AVG_LEN_MAX 20
+#define AVG_LEN_MAX 7
 
 htab_pair_t * htab_lookup_add(htab_t * t, htab_key_t key) {
 	htab_pair_t * pair = htab_find(t, key);
@@ -13,14 +13,14 @@ htab_pair_t * htab_lookup_add(htab_t * t, htab_key_t key) {
 		size_t hash = htab_hash_function(key) % t->arr_size;
 
 		// allocate memory for the pair
-		htab_list_t * listToInsert = malloc(sizeof(htab_list_t));
+		htab_list_t * listToInsert = calloc(sizeof(htab_list_t), 1);
 		if (listToInsert == NULL) {
 			return NULL;
 		}
 
 		// allocate memory for the key in the pair
 		size_t keyLen = strlen(key);
-		listToInsert->pair.key = malloc(keyLen + 1);
+		listToInsert->pair.key = calloc(keyLen + 1, 1);
 		if (listToInsert->pair.key == NULL) {
 			free(listToInsert);
 			return NULL;

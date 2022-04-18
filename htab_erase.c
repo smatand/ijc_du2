@@ -1,6 +1,6 @@
 #include "htab_private.h"
 
-#define AVG_LEN_MIN 20
+#define AVG_LEN_MIN 7 // for size of htab, there may be many keys with same hash value
 
 bool htab_erase(htab_t * t, htab_key_t key) {
 	size_t hash = htab_hash_function(key) % t->arr_size;
