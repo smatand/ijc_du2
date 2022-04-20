@@ -1,8 +1,13 @@
 #include "htab_private.h"
 
-#define AVG_LEN_MIN 7 // for size of htab, there may be many keys with same hash value
+#define AVG_LEN_MIN 0.5
 
 bool htab_erase(htab_t * t, htab_key_t key) {
+	// check if the table is too small
+	if (t->size / t->arr_size < AVG_LEN_MIN) {
+		htab_resize(t, t->arr_size / 2);
+	}
+
 	size_t hash = htab_hash_function(key) % t->arr_size;
 	htab_list_t * list = t->arr[hash];
 
@@ -29,10 +34,6 @@ bool htab_erase(htab_t * t, htab_key_t key) {
 			free(listToRemove);
 
 			t->size--;
-			// check if the table is too small
-			if (t->size / t->arr_size < AVG_LEN_MIN) {
-				htab_resize(t, t->arr_size / 2);
-			}
 
 			return true;
 		}
