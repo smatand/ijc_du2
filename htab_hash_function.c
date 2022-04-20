@@ -1,3 +1,7 @@
+// htab_hash_function.c
+// Riesenie IJC-DU2, priklad b), 20.4.2022
+// Author: Andrej Smatana, FIT
+// Prelozene: gcc 9.4.0
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -6,6 +10,8 @@
 
 #ifndef HASH_TEST
 
+// function copy-pasted from
+// http://www.cse.yorku.ca/~oz/hash.html - variant sdbm
 size_t htab_hash_function(const char *str) {
     uint32_t h=0;     // integer has to be of 32 bits
     const unsigned char *p;
