@@ -1,3 +1,7 @@
+// tail.c
+// Riesenie IJC-DU2, priklad a), 20.4.2022
+// Author: Andrej Smatana, FIT
+// Prelozene: gcc 9.4.0
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
