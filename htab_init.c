@@ -7,7 +7,7 @@ htab_t *htab_init(size_t n) {
 		return NULL;
 	}
 
-	htab_t *t = malloc(sizeof(struct htab));
+	htab_t *t = calloc(sizeof(struct htab), 1);
 
 	if (t == NULL) {
 		return NULL;

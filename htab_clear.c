@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <string.h>
 
 #include "htab_private.h"
 
@@ -8,12 +7,15 @@ void htab_clear(htab_t * t) {
 	for (size_t i = 0; i < t->arr_size; i++) {
 		// clear bucket
 		htab_list_t *list = t->arr[i]; // used as current list
+		htab_list_t *next = NULL;
 
 		// start clearing lists from the beginning
 		while (list != NULL) {
-			htab_list_t *next = list->next; // for list
-			free((char *) list->pair.key);
+			next = list->next; // for list
+
+			free((char*)list->pair.key);
 			free(list);
+
 			list = next;
 		}
 
@@ -25,4 +27,3 @@ void htab_clear(htab_t * t) {
 
 	return;
 }
-

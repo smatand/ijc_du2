@@ -5,6 +5,11 @@
 #include "htab_private.h"
 #include "io.h"
 
+// according to resources I was searching for on the internet,
+// the average number of unique words in a text is mostly in range
+// of 5000-15000 words
+// another advice I found was to use a number so the capacity of hash 
+// table would be filled up to 70-75% and that this number should be a prime number
 #define HTAB_SIZE 19609
 
 #define WORD_MAX_SIZE 127
@@ -41,7 +46,7 @@ int main(int argc, char *argv[]) {
 	htab_pair_t * pair = NULL;
 	bool overflow_f = false;
 
-	char * word = calloc(WORD_MAX_SIZE, 1);
+	char word[WORD_MAX_SIZE];
 	int word_length = 0;
 
 	while((word_length = read_word(word, WORD_MAX_SIZE, fp)) != EOF) {
@@ -53,6 +58,7 @@ int main(int argc, char *argv[]) {
 		pair = htab_lookup_add(t, word);
 		if (pair == NULL) {
 			fprintf(stderr, "ERROR: htab_lookup_add has failed.\n");
+			htab_free(t);
 			exit(1);
 		}
 		pair->value++;
